@@ -359,11 +359,10 @@ public:
      */
     void callbackGPIOInterruptSubscriber(const std_msgs::UInt64::ConstPtr& msg) {
         if ( ( ((uint64_t) msg->data ) & ( (uint64_t) _gpio_interrupt_mask_ )) == 0) {
-            ROS_INFO("GPIO Interrupt triggered!");
-
             while(_hardware_handle_->checkReceive() == CAN_MSGAVAIL) {
                 readMsgBuffandPub();
             }
+
         }
     }
 
@@ -375,8 +374,6 @@ public:
      *  @retval: None
      */
     void callbackScheduledReadCheck(const ros::TimerEvent& event) {
-        ROS_INFO("Scheduled read check triggered!");
-
         while(_hardware_handle_->checkReceive() == CAN_MSGAVAIL) {
             readMsgBuffandPub();
         }
