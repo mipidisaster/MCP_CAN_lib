@@ -29,7 +29,7 @@
 #ifndef _MCP2515_ROS_H_
 #define _MCP2515_ROS_H_
 
-#include "mcp_can_dfs.h"
+#include "mcp_can_dfs_ros.h"
 #define MAX_CHAR_IN_MESSAGE 8
 
 #include <ros/ros.h>
