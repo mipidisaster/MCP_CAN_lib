@@ -1,31 +1,34 @@
 /*
-  mcp_can_dfs.h
-  2012 Copyright (c) Seeed Technology Inc.  All right reserved.
-  2017 Copyright (c) Cory J. Fowler  All Rights Reserved.
+    mcp_can_dfs_ros.h
+    This library is an adaptation of MCP_CAN library for milibrary ROS SPI services
 
-  Author:Loovee
-  Contributor: Cory J. Fowler
-  2017-09-25
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
+    --> Below the original license (from MCP_CAN library):
 
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+    mcp_can_dfs.h
+    2012 Copyright (c) Seeed Technology Inc.  All right reserved.
+    2017 Copyright (c) Cory J. Fowler  All Rights Reserved.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-
-  1301  USA
+    Author:Loovee
+    Contributor: Cory J. Fowler
+    2017-09-25
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-
+    1301  USA
 */
-#ifndef _MCP2515DFS_H_
-#define _MCP2515DFS_H_
+#ifndef _MCP2515DFS_ROS_H_
+#define _MCP2515DFS_ROS_H_
 
-#include <Arduino.h>
-#include <SPI.h>
 #include <inttypes.h>
 
 #ifndef INT32U
@@ -33,7 +36,7 @@
 #endif
 
 #ifndef INT8U
-#define INT8U byte
+#define INT8U uint8_t
 #endif
 
 // if print debug information
@@ -463,15 +466,19 @@
 #define CAN_500KBPS  13
 #define CAN_1000KBPS 14
 
-#define CAN_OK             (0)
-#define CAN_FAILINIT       (1)
-#define CAN_FAILTX         (2)
-#define CAN_MSGAVAIL       (3)
-#define CAN_NOMSG          (4)
-#define CAN_CTRLERROR      (5)
-#define CAN_GETTXBFTIMEOUT (6)
-#define CAN_SENDMSGTIMEOUT (7)
-#define CAN_FAIL       (0xff)
+#define CAN_OK                  (0)
+#define CAN_FAILINIT            (1)
+#define CAN_FAILTX              (2)
+#define CAN_MSGAVAIL            (3)
+#define CAN_NOMSG               (4)
+#define CAN_CTRLERROR           (5)
+#define CAN_GETTXBFTIMEOUT      (6)
+#define CAN_SENDMSGTIMEOUT      (7)
+
+#define CAN_LOSTARBITRATION     (8)
+#define CAN_TRANSMITERROR       (9)
+
+#define CAN_FAIL                (0xff)
 
 #define CAN_MAX_CHAR_IN_MESSAGE (8)
 
