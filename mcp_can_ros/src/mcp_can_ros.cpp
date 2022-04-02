@@ -47,8 +47,21 @@ void MCP_CAN::spiTransfer(uint8_t *buff, uint8_t number_bytes)
     for (uint8_t i = 0; i != number_bytes; i++)
         msg.request.write_data[i] = buff[i];
 
-    // Push data to the SPI service
-    spi_interface->call(msg);
+    uint8_t attempt_count = 0;
+
+    do {
+        if (attempt_count > 0) {
+            ROS_WARN("Retrying SPI data transfer, attempt -- %d", attempt_count);
+        }
+
+        attempt_count++;
+        // Push data to the SPI service
+        spi_interface->call(msg);
+    } while ((msg.response.fault != 0) && (attempt_count < 10) );
+
+    if (attempt_count == 10) {
+        ROS_ERROR("Failed to get a good SPI data transfer!!");
+    }
 
     for (uint8_t i = 0; i != number_bytes; i++)
         buff[i] = msg.response.read_data[i];
