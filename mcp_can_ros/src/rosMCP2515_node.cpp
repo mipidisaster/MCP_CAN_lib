@@ -184,7 +184,7 @@ public:
             ROS_ERROR("Failed to init MCP2515 (CAN bus) - %d", result);
         }
 
-        if (_hardware_handle_->disOneShotTX() != CAN_OK) {
+        if (_hardware_handle_->enOneShotTX() != CAN_OK) {
             ROS_ERROR("Didn't configure one shot mode correctly - %d", result);
         }
 
@@ -236,6 +236,9 @@ public:
                                    MCP_8MHz_1000kBPS_CFG3);
 
         for (uint8_t i = 0; i != 3; i++) {
+            ROS_INFO("CAN configuration parameter cfg[%d] set to :: %d (0x%X)", i, _can_cfg_[i],
+                                                                                   _can_cfg_[i]);
+
             if ( (_can_cfg_[i] < 0x00) || (_can_cfg_[i] > 0xFF) ) {
                 ROS_ERROR("CAN cfg1...cfg3 parameters need to be 1byte wide; so a range of "
                           "0 to 255 is expected");
@@ -311,7 +314,7 @@ public:
      *  @retval: None
      */
     void callbackTxReqestSubscriber(const mcp_can_msgs::canMessage::ConstPtr& msg) {
-        if ( (msg->data.size() == 0) || (msg->data.size() > 8) ) {};
+        if ( (msg->data.size() == 0) || (msg->data.size() > 8) ) {return;};
 
         uint8_t resturn = _hardware_handle_->sendMsgBuf(msg->identifier,
                                                         msg->extendedMode,
