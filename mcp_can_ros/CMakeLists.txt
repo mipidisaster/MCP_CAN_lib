@@ -133,25 +133,6 @@ add_dependencies(mcp_can_node
 
 target_link_libraries(mcp_can_node milibrary ${catkin_LIBRARIES})
 
-## Declare a C++ executable
-add_executable(mcp1_can_node
-               src/rosMCP2515_node.cpp
-               src/mcp_can_ros.cpp)
-
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-add_dependencies(mcp1_can_node
-                 ${mcp_can_ros_EXPORTED_TARGETS}
-                 ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(mcp1_can_node milibrary ${catkin_LIBRARIES})
-
 #############
 ## Install ##
 #############
