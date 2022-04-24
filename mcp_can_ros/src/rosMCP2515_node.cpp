@@ -14,18 +14,43 @@
  * This node is called "mcp2515_node"
  *   Configuration parameters:
  *      ~/config        /loop_rate
- *                      [ Floating data value, specifying the rate that the Linux device is
- *                      [ interrogated.
- *                      [ - Note, if none is provided will default to '4Hz'
+ *                      [ Floating data value, specifying the rate that the MCP2515 device is
+ *                      [ checked.
+ *                      [ - Note, if none is provided will default to '277.7uHz' (~once every hour)
+ *                      [         set this way as expect the Interrupt pin to be used to trigger a
+ *                      [         read
  *
  *                      /address
- *                      [ The SPI address for the MAX6675 device
+ *                      [ The SPI address for the MCP2515 device
+ *
+ *                      /cfg1..3
+ *                      [ Byte values to be configured into the MCP2515 device to setup the CAN
+ *                      [ baudrate.
+ *                      [ - Note, See the 'config' folder for a list of pre-created 'yaml' files
+ *
+ *                      /gpio_interrupt_mask
+ *                      [ Integer value to be applied to milibrary/GPIOctrl message to retrieve
+ *                      [ the specific bit containing the MCP2515 Interrupt input
+ *                      [ - Note, if this is not provided, then the above 'loop_rate' will need to
+ *                      [         be configured to ensure device is checked regularly
+ *
  *
  *   Publishers:
- *      None
+ *      read_can
+ *                      [ Provides the received CAN frames, rate will depend upon when messages are
+ *                      [ received.
+ *                      [ Uses mcp_can_msgs/msg/canMessage.msg
  *
  *   Subscribers:
- *      None
+ *      write_can
+ *                      [ Stream of data from external nodes for CAN frames which are requested to
+ *                      [ be communicated
+ *                      [ Uses mcp_can_msgs/msg/canMessage.msg
+ *
+ *      can_gpio_interrupt
+ *                     [ Stream of data from GPIO node containing the GPIO input from the MCP2515
+ *                     [ interrupt signal.
+ *                     [ Uses std_msgs/UInt64.msg
  *
  *   Services:
  *      None
@@ -68,8 +93,8 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *************************************************************************************************/
 class rosMCP2515 {
-
 private:
+    // Constant(s) used within the class.
     std::string         kconfig_sub_area            = "config/";
     std::string         kcan_cfg1                   = "can/cfg1";
     std::string         kcan_cfg2                   = "can/cfg2";
@@ -79,16 +104,16 @@ private:
     std::string         knode_loop_rate             = "loop_rate";
     std::string         knode_spi_address           = "address";
 
-    std::string         kMCP_publish_messages       = "can_messages";
-    std::string         kMCP_subscribe_TX_request   = "request_tx";
-    std::string         kMCP_subscribe_gpio_int     = "can_gpio_interrupt";
+    std::string         kMCP_publish_messages       = "read_can";
 
     // Inputs
     std::string         kSPI_transfer_service       = "transfer_spi";
+    std::string         kMCP_subscribe_TX_request   = "write_can";
+    std::string         kMCP_subscribe_gpio_int     = "can_gpio_interrupt";
 
 private:
-    MCP_CAN                 *_hardware_handle_  = NULL;
-    uint32_t                _packet_sequence_                       =  0;
+    MCP_CAN                 *_hardware_handle_      = NULL;
+    uint32_t                _packet_sequence_       =  0;
 
 /**************************************************************************************************
  * == ROS STUFF == >>>   ROBOT OPERATING SYSTEM (ROS) OBJECTS    <<<
@@ -160,10 +185,10 @@ public:
      *  @param:  void
      *  @retval: void
      */
-    void hardwareCallbackThread(void) {
-        ros::SingleThreadedSpinner spinner;
-        spinner.spin(&_hardware_callback_queue_);
-    }
+    //void hardwareCallbackThread(void) {
+    //    ros::SingleThreadedSpinner spinner;
+    //    spinner.spin(&_hardware_callback_queue_);
+    //}
 
     /*
      *  @brief:  Function to encapsulate the looping of this node.
@@ -213,7 +238,7 @@ public:
         // Input parameters
         _private_nh_.param<double>(kconfig_sub_area + knode_loop_rate,
                                    _loop_rate_parameter_,
-                                   0.01);
+                                   0.0002777777f);
 
         _private_nh_.param<int>   (kconfig_sub_area + kcan_gpio_interrupt_mask,
                                    _gpio_interrupt_mask_,
@@ -248,6 +273,7 @@ public:
 
         //=========================================================================================
         // Duplication check
+        // Not needed for this node
 
         //=========================================================================================
 
@@ -255,7 +281,7 @@ public:
 
         ROS_INFO("MCP2515 has been setup");
         //=========================================================================================
-        // Publishers
+        // Publishers/Subscribers
         _read_can_frame_publisher_ = _nh_.advertise<mcp_can_msgs::canMessage>(
                                                 kMCP_publish_messages,
                                                 20);
@@ -321,26 +347,25 @@ public:
                                                         msg->data.size(),
                                                         (uint8_t *)msg->data.data());
 
-        ROS_INFO("Return state %d", resturn);
-        ROS_INFO("Error counts -- TX : %d \t\t RX : %d", _hardware_handle_->errorCountTX(),
-                                                         _hardware_handle_->errorCountRX());
-        ROS_INFO("Error register -- : %d", _hardware_handle_->checkError());
+        // Some form of fault indication needs to be provided as output of this node
     }
 
     /*
      *  @brief:  Wrapper function to read the CAN Received Buffers, and publish the contents
      *
      *  @param:  None
-     *  @retval: None
+     *  @retval: returns 4 (CAN_NOMSG) if there is no messages available in the system
+     *           returns 0 (CAN_OK)    if a read has been successful
      */
-    void readMsgBuffandPub(void) {
+    uint8_t readMsgBuffandPub(void) {
         mcp_can_msgs::canMessage  pub;
         uint8_t rxBuff[8];
         uint8_t  len;
         unsigned long int rxId;
         uint8_t  rxExtd;
 
-        _hardware_handle_->readMsgBuf(&rxId, &rxExtd, &len, rxBuff);
+        uint8_t read_state = _hardware_handle_->readMsgBuf(&rxId, &rxExtd, &len, rxBuff);
+        if (read_state == CAN_NOMSG) {  return (CAN_NOMSG);  };
 
         pub.header.seq      =  _packet_sequence_++;
         pub.header.stamp    = ros::Time::now();
@@ -352,6 +377,8 @@ public:
         }
 
         _read_can_frame_publisher_.publish(pub);
+
+        return (0);
     }
 
     /*
@@ -362,9 +389,7 @@ public:
      */
     void callbackGPIOInterruptSubscriber(const std_msgs::UInt64::ConstPtr& msg) {
         if ( ( ((uint64_t) msg->data ) & ( (uint64_t) _gpio_interrupt_mask_ )) == 0) {
-            while(_hardware_handle_->checkReceive() == CAN_MSGAVAIL) {
-                readMsgBuffandPub();
-            }
+            while(readMsgBuffandPub() != CAN_NOMSG) {}
 
         }
     }
@@ -377,9 +402,8 @@ public:
      *  @retval: None
      */
     void callbackScheduledReadCheck(const ros::TimerEvent& event) {
-        while(_hardware_handle_->checkReceive() == CAN_MSGAVAIL) {
-            readMsgBuffandPub();
-        }
+        while(readMsgBuffandPub() != CAN_NOMSG) {}
+
     }
 
     ~rosMCP2515() {
