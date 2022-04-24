@@ -819,9 +819,20 @@ INT8U MCP_CAN::mcp2515_getNextFreeTXBuf(INT8U *txbuf_n) /* get Next free txbuf  
  ** Function name:           MCP_CAN
  ** Descriptions:            Public function to declare CAN class and the /CS pin.
  *********************************************************************************************************/
+MCP_CAN::MCP_CAN()
+{
+    spi_address = 0;
+    fifoRead    = 0;
+}
+
+/*********************************************************************************************************
+ ** Function name:           MCP_CAN
+ ** Descriptions:            Public function to declare CAN class and the /CS pin.
+ *********************************************************************************************************/
 MCP_CAN::MCP_CAN(ros::ServiceClient *spi_service, double address)
 {
     spi_address = address;
+    fifoRead    = 0;
     spi_interface = spi_service;
 }
 
@@ -1300,18 +1311,23 @@ INT8U MCP_CAN::readMsg()
 
     stat = mcp2515_readStatus();
 
-    if (stat & MCP_STAT_RX0IF) /* Msg in Buffer 0              */
+    if ((fifoRead == 0) && (stat & MCP_STAT_RX0IF))         /* Msg in Buffer 0              */
     {
         mcp2515_read_canMsg( MCP_RXBUF_0);
         mcp2515_modifyRegister(MCP_CANINTF, MCP_RX0IF, 0);
+        fifoRead = 1;
         res = CAN_OK;
-    } else if (stat & MCP_STAT_RX1IF) /* Msg in Buffer 1              */
+    } else if ((fifoRead != 0) && (stat & MCP_STAT_RX1IF))  /* Msg in Buffer 1              */
     {
         mcp2515_read_canMsg( MCP_RXBUF_1);
         mcp2515_modifyRegister(MCP_CANINTF, MCP_RX1IF, 0);
+        fifoRead = 0;
         res = CAN_OK;
-    } else
+    } else {
+        fifoRead = 0;       // Force the FIFO read back to look at the initial entry
+
         res = CAN_NOMSG;
+    }
 
     return res;
 }

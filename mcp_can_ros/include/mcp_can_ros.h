@@ -48,8 +48,10 @@ class MCP_CAN
     //INT8U   MCPCS;  (NOT NEEDED, wiringPi already handles CS pin)     // Chip Select pin number
     INT8U   mcpMode;                                                    // Mode to return to after configurations are performed.
     
+
     ros::ServiceClient *spi_interface;
     double spi_address;
+    uint8_t   fifoRead;
 
 /*********************************************************************************************************
  *  mcp2515 driver function 
@@ -57,7 +59,7 @@ class MCP_CAN
    // private:
    private:
 
-    void spiTransfer(uint8_t *buff, uint8_t number_bytes);
+    virtual void spiTransfer(uint8_t *buff, uint8_t number_bytes);
 
     void mcp2515_reset(void);                                           // Soft Reset MCP2515
 
@@ -122,6 +124,7 @@ class MCP_CAN
     INT8U sendMsg();                                                    // Send message
 
 public:
+    MCP_CAN();
     MCP_CAN(ros::ServiceClient *spi_service, double address);
 
 
