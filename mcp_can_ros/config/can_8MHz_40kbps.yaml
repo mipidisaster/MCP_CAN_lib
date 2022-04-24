@@ -1,0 +1,6 @@
+# Setup for 8MHz Clock @ 40kbps (MCP_CAN header)
+config:
+   can:
+      cfg1:                     132
+      cfg2:                     246
+      cfg3:                     132
